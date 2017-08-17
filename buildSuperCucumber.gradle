@@ -1,0 +1,33 @@
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'com.cucumbergoodies.seleium:cucumber-extensions:1.0'
+    }
+}
+
+apply plugin: 'supercucumber'
+
+import com.cucumbergoodies.selenium.plugin.ParallelizeOptions
+import com.cucumbergoodies.selenium.plugin.tasks.CucumberJUnitTestRunner
+
+
+
+task supercucumber(type: CucumberJUnitTestRunner) {
+    cucumberExtensions {
+        stepDefinitionsPath 'com.example.stepdefs'
+        featuresPath 'src/test/resources/com/example'
+        tags '@all'
+        parallelize ParallelizeOptions.PARALLELIZE_OPTIONS.SCENARIOS
+        browser 'chrome'
+    }
+}
+
+test.dependsOn supercucumber
+//test.followedBy mergeReports
+
+test {
+    maxParallelForks = Integer.parseInt(String.valueOf(System.properties.get('maxParallelForks')))
+    forkEvery = 1
+}

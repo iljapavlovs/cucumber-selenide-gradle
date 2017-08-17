@@ -1,0 +1,86 @@
+import net.masterthought.cucumber.ReportBuilder
+import net.masterthought.cucumber.Configuration
+import net.masterthought.cucumber.Reportable
+
+buildscript {
+    repositories {
+        maven {
+            url "http://repo.bodar.com"
+        }
+        mavenCentral()
+    }
+
+    dependencies {
+        classpath "net.masterthought:cucumber-reporting:3.8.0"
+    }
+}
+apply plugin: 'java'
+apply plugin: 'idea'
+
+repositories {
+    mavenCentral()
+}
+dependencies {
+    testCompile 'com.codeborne:selenide:4.4.3'
+    testCompile 'info.cukes:cucumber-java:1.2.5'
+    testCompile 'info.cukes:cucumber-junit:1.2.5'
+}
+
+configurations {
+    cucumberRuntime {
+        extendsFrom testRuntime
+    }
+}
+
+task cucumber {
+    dependsOn assemble, compileTestJava
+
+    doLast {
+        javaexec {
+            main = "cucumber.api.cli.Main"
+            classpath = configurations.cucumberRuntime + sourceSets.main.output + sourceSets.test.output
+            args = ['--plugin', 'pretty', '--strict', '--plugin', 'json:build/cucumber/cucumber-cheese.json',
+                    '--plugin', 'html:build/cucumber/cheese',
+                    '--glue', 'lv.iljapavlovs.cucumber.stepdefs',
+                    '--glue', 'lv.iljapavlovs.cucumber.hooks',
+                    '--tags', '@cheese', 'src/test/resources']
+        }
+        generateReport()
+    }
+}
+
+
+test {
+    // show standard out and standard error of the test JVM(s) on the console
+    testLogging.showStandardStreams = true
+    maxParallelForks = 1
+    forkEvery = 1
+    ignoreFailures=true
+}
+
+def generateReport() {
+    def jsonReports = fileTree(dir: "${reporting.baseDir}/cucumber/").include '**/*.json'.toString()
+    print "${reporting.baseDir}/cucumber/"
+    File reportOutputDirectory = new File("${reporting.baseDir}/cucumber");
+
+    List<String> jsonReportFiles = new ArrayList<String>();
+    jsonReports.each { File file ->
+        jsonReportFiles.add("${reporting.baseDir}/cucumber/${file.name}".toString());
+    }
+
+    Configuration configuration = new Configuration(reportOutputDirectory, "cucumber-gradle-parallel");
+    // optional configuration
+    configuration.setParallelTesting(true);
+    configuration.setRunWithJenkins(false);
+    configuration.setBuildNumber("1988");
+
+    ReportBuilder reportBuilder = new ReportBuilder(jsonReportFiles, configuration);
+    Reportable result = reportBuilder.generateReports();
+    println("\nReport available on: ${reporting.baseDir}/cucumber/cucumber-html-reports/overview-features.html")
+}
+
+task wrapper(type: Wrapper) {
+    gradleVersion = '4.0' //we want gradle 4.0 to run this project
+}
+
+

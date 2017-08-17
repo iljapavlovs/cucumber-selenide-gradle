@@ -1,0 +1,59 @@
+buildscript {
+    repositories {
+        maven {
+            url "https://plugins.gradle.org/m2/"
+        }
+    }
+    dependencies {
+        classpath "com.commercehub:gradle-cucumber-jvm-plugin:0.9"
+    }
+}
+
+apply plugin: 'java'
+apply plugin: "com.commercehub.cucumber-jvm"
+
+sourceCompatibility = 1.8
+version = '1.0'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    testCompile 'com.codeborne:selenide:4.4.3'
+    testCompile 'info.cukes:cucumber-java:1.2.5'
+    testCompile 'info.cukes:cucumber-junit:1.2.5'
+}
+
+//task uitest(type: Test) {
+//    systemProperties['remoteDriver'] = 'false'
+//    systemProperties['gridURL'] = ''
+//
+//}
+
+test {
+    // show standard out and standard error of the test JVM(s) on the console
+    testLogging.showStandardStreams = true
+    maxParallelForks = 2
+    forkEvery = 1
+}
+
+addCucumberSuite 'cucumberTest'
+cucumber {
+    maxParallelForks = 1
+}
+
+cucumberTest {
+    stepDefinitionRoots = ['lv.iljapavlovs.stepdefs', 'lv.iljapavlovs.hooks']
+    featureRoots =  ['src/test/resources/features']
+    tags = ['@cheese']
+    systemProperties = [
+            'remoteDriver': 'false',
+            'gridURL': ''
+
+    ]
+}
+
+task wrapper(type: Wrapper) {
+    gradleVersion = '4.0'
+}
